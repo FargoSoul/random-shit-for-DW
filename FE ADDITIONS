@@ -1,0 +1,43 @@
+FE ADDITIONS auto disenchant/sacrifice simple also gameloop with KIS and second part of disenchant/sacrifice also other stuff.
+
+26 September 2024
+14:21
+
+
+
+function handleGameEvents() {
+    for (let eventFunction of eventPriority) {
+        const target = eventFunction();
+        if (!target) continue;
+        const attackers = Finder.getEntities().filter(e => e.targetId === dw.character.id && dw.mdInfo[e.md]?.isMonster);
+        // Are we out of combat, but low on health?
+        if (!dw.character.combat && dw.character.hp / dw.character.maxHp < 0.50) {
+            // Use out of combat regen to get back to more hp
+            return
+            }
+
+
+async function disenchanter() {
+    let enchantingDevice = dw.findEntities((e) => e.owner && e.md.includes("disenchantStation") && dw.distance(e, dw.c) < 2).shift()
+    if(!enchantingDevice) return
+    let idx = -1
+    for(let item of dw.c.i) {
+        ++idx
+        if(!item) continue
+        // Only gear
+        if(!(dw.mdInfo[item.md].isWeapon || dw.mdInfo[item.md].isArmor || dw.mdInfo[item.md].isAccessory)) continue
+        if(item.r >= 3) continue
+        await dw.disenchant(enchantingDevice.id, idx)
+    }
+}
+
+* Main game loop that continuously checks for events to handle.
+ */
+function gameLoop() {
+    if (IS_ACTIVE) {
+        handleGameEvents();
+    }  if(dw.getZoneLevel() <= 21) {dw.suicide()}
+    disenchanter()
+    setTimeout(gameLoop, 350); // Re-run the loop every 250ms
+}
+gameLoop();
